@@ -1,0 +1,120 @@
+---
+title: "Tugas Analisis Regresi Minggu 7"
+output: html_document
+date: "2024-03-06"
+---
+
+##### *Meriza Immanuela Virgie - G1401221076*
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(readxl)
+anreg <- read_xlsx("C:/Users/mivir/Documents/data anreg w7.xlsx")
+View(anreg)
+```
+
+## **PLOT DATA**
+
+```{r}
+plot(anreg$Y~anreg$X)
+```
+
+Dari scatter plot tersebut, terlihat bahwa peubah x dan peubah y tidak berhubungan linier
+
+## **MODEL AWAL**
+
+```{r}
+library(lmtest)
+modelreg <- lm(formula = Y~X, data = anreg)
+summary(modelreg)
+modelreg
+```
+
+Karena p-value \< 0.05 (α), maka dapat dikatakan bahwa x mempengaruhi y pada taraf nyata 5%. Nilai adj R-squared menggambarkan bagaimana nilai x dapat menjelaskan keragaman nilai y, pada konteks ini sebesar 0,8768 atau sebesar 87,68%.
+
+```{r}
+error = modelreg$residuals
+error
+```
+
+## **PENGUJIAN ASUMSI**
+
+#### UJI KENORMALAN
+
+$$H0$$ = Sisaan menyebar normal
+
+$H1$ = Sisaan tidak menyebar normal
+
+```{r}
+library(plotly)
+qqnorm(anreg$Y)
+qqline(anreg$Y, col = "blue")
+```
+
+```{r}
+shapiro.test(error)
+```
+
+Karena p-value \< 0.05, maka tidak tolak $H0$ yang berarti cukup bukti untuk menyatakan bahwa data menyebar normal. Sehingga asumsi kenormalan data terpenuhi
+
+#### UJI AUTOKORELASI
+
+$H0$ = Tidak ada autokorelasi
+
+$H1$ = Terdapat autokorelasi
+
+```{r}
+dwtest(modelreg)
+```
+
+Didapatkan p-value \< 0.05, maka tolak $H0$ yang berarti tidak cukup bukti untuk menyatakan bahwa tidak ada autokorelasi dalam residual. Sehingga asumsi tidak terpenuhi
+
+#### UJI HOMOKEDASTISITAS
+
+$H0$ = Varian sisaan konstan
+
+$H1$ = Varian sisaan tidak konstan
+
+```{r}
+bptest(modelreg, studentize = TRUE, data = anreg)
+```
+
+Dari hasil uji tersebut, terlihat bahwa p-value \> 0.05, maka tidak tolak $H0$ yang berarti cukup bukti bahwa varian sisaan konstan. Sehingga, asumsi terpenuhi
+
+## KESIMPULAN DAN TRANSFORMASI
+
+Dapat disimpulkan bahwa dari semua pengujian yang dilakukan, ditemukan bahwa ada satu asumsi yang tidak terpenuhi. Masih terdapat autokorelasi yang terjadi dalam data.
+
+Kemudian akan dilakukan tranformasi data untuk dapat memenuhi asumsi tersebut. Karena nilai B1 (-0,75251) \< 0, maka transformasi dilakukan dengan mengecilkan nilai X dan/atau Y dengan membuat menjadi pangkat 1/2 atau akar dari data asli.
+
+#### TRANSFORMASI
+
+```{r}
+x.trans <- sqrt(anreg$X)
+x.trans
+y.trans <- sqrt(anreg$Y)
+y.trans
+
+model.trans <- lm(y.trans~x.trans, data = anreg)
+model.trans
+```
+
+#### UJI AUTOKORELASI
+
+```{r}
+dwtest(model.trans)
+```
+
+p-value yang didapat adalah 0.8629 di mana \> 0.05, maka tidak tolak H0. Hal tersebut berarti tidak terjadi autokorelasi pada data yang sudah ditransformasi
+
+#### REGRESI SETELAH TRANSFORMASI
+
+```{r}
+plot(y.trans~x.trans)
+summary(model.trans)
+```
+
+Model Regresi Terbaik (Transformasi): $$ Y.duga = 8.71245 - 0.81339x + e $$Model tersebut berarti bahwa setiap 1 kenaikan nilai x, akan menurunkan nilai rata-rata Y sebanyak 0.81339. Sedangkan nilai 8.71245 (B0) merupakan nilai rata-rata Y ketika x bernilai 0
